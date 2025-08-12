@@ -36,12 +36,27 @@ android {
 }
 
 dependencies {
-
+    // Android基础库
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // CameraX依赖 - 现代相机开发的最佳选择
+    // 核心库：提供基础的相机功能
+    implementation(libs.androidx.camera.core)
+    // Camera2实现：使用Camera2 API作为底层实现，性能更好
+    implementation(libs.androidx.camera.camera2)
+    // 生命周期库：自动管理相机的生命周期，避免内存泄漏
+    implementation(libs.androidx.camera.lifecycle)
+    // 视图库：提供PreviewView等UI组件
+    implementation(libs.androidx.camera.view)
+    // 扩展库：提供夜景、人像等高级功能（可选）
+    implementation(libs.androidx.camera.extensions)
+    implementation(libs.camera.view)
+
+    // 测试依赖
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

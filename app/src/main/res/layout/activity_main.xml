@@ -1,19 +1,310 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+水印相机主界面布局设计说明：
+1. 使用ConstraintLayout作为根布局 - 性能最优，约束关系清晰
+2. 采用全屏沉浸式设计 - 最大化相机预览区域
+3. 分层设计：相机预览层 + UI控制层 + 水印编辑层
+4. 响应式布局 - 适配不同屏幕尺寸和方向
+-->
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background_dark"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
+    <!--
+    相机预览区域 - CameraX PreviewView
+
+    PreviewView特性说明：
+    1. 自动处理预览的缩放和旋转
+    2. 支持不同的缩放类型（FILL_START, FILL_CENTER, FILL_END, FIT_START, FIT_CENTER, FIT_END）
+    3. 生命周期感知，自动管理预览状态
+    4. 支持触摸对焦和缩放手势
+
+    scaleType选择说明：
+    - FILL_CENTER: 保持宽高比，填充整个View，可能会裁剪部分内容
+    - FIT_CENTER: 保持宽高比，完整显示内容，可能会有黑边
+    -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:scaleType="fillCenter" />
+
+    <!--
+    顶部控制栏 - 包含闪光灯、切换摄像头、设置等功能
+    设计原理：
+    1. 使用半透明背景，不完全遮挡预览
+    2. 水平排列，符合用户操作习惯
+    3. 图标大小48dp，符合Material Design触摸目标最小尺寸
+    -->
+    <LinearLayout
+        android:id="@+id/topControlBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 闪光灯控制按钮 -->
+        <ImageButton
+            android:id="@+id/btnFlash"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/round_button_background"
+            android:src="@drawable/ic_flash_auto"
+            android:contentDescription="@string/flash_auto"
+            android:scaleType="centerInside"
+            android:padding="12dp" />
+
+        <!-- 占位空间，让右侧按钮靠右对齐 -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- 切换摄像头按钮 -->
+        <ImageButton
+            android:id="@+id/btnSwitchCamera"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="12dp"
+            android:background="@drawable/round_button_background"
+            android:src="@drawable/ic_switch_camera"
+            android:contentDescription="@string/switch_camera"
+            android:scaleType="centerInside"
+            android:padding="12dp" />
+
+        <!-- 设置按钮 -->
+        <ImageButton
+            android:id="@+id/btnSettings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/round_button_background"
+            android:src="@drawable/ic_settings"
+            android:contentDescription="@string/settings"
+            android:scaleType="centerInside"
+            android:padding="12dp" />
+
+    </LinearLayout>
+
+    <!--
+    底部控制区域 - 主要拍照控制和功能入口
+    设计原理：
+    1. 三段式布局：相册 | 拍照按钮 | 水印控制
+    2. 拍照按钮居中且最大，符合用户期望
+    3. 底部留出安全区域，适配全面屏手机
+    -->
+    <LinearLayout
+        android:id="@+id/bottomControlBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 相册按钮 - 查看已拍摄的照片 -->
+        <ImageButton
+            android:id="@+id/btnGallery"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/round_button_background"
+            android:src="@drawable/ic_gallery"
+            android:contentDescription="@string/gallery"
+            android:scaleType="centerInside"
+            android:padding="16dp" />
+
+        <!-- 中间占位空间 -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!--
+        拍照按钮 - 主要操作按钮
+        设计说明：
+        1. 80dp大小，确保容易点击
+        2. 圆形设计，符合相机应用惯例
+        3. 红色背景，视觉突出
+        4. 白色边框，增加层次感
+        -->
+        <Button
+            android:id="@+id/btnCapture"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:background="@drawable/capture_button_background"
+            android:contentDescription="@string/capture_photo"
+            android:text=""
+            android:textSize="0sp" />
+
+        <!-- 右侧占位空间 -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- 水印控制按钮 -->
+        <ImageButton
+            android:id="@+id/btnWatermark"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:background="@drawable/round_button_background"
+            android:src="@drawable/ic_watermark"
+            android:contentDescription="@string/watermark"
+            android:scaleType="centerInside"
+            android:padding="16dp" />
+
+    </LinearLayout>
+
+    <!--
+    水印编辑面板 - 可滑动显示/隐藏
+    设计原理：
+    1. 默认隐藏，点击水印按钮时从底部滑入
+    2. 半透明背景，保持预览可见性
+    3. 圆角设计，现代化UI风格
+    4. 包含常用水印功能的快速入口
+    -->
+    <LinearLayout
+        android:id="@+id/watermarkPanel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/watermark_panel_background"
+        android:padding="20dp"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@id/bottomControlBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 水印面板标题 -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/watermark"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 水印类型选择 - 水平滚动列表 -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- 无水印选项 -->
+                <LinearLayout
+                    android:id="@+id/watermarkNone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_camera"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/watermark_none"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <!-- 文字水印选项 -->
+                <LinearLayout
+                    android:id="@+id/watermarkText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_watermark"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/watermark_text"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+                <!-- 时间水印选项 -->
+                <LinearLayout
+                    android:id="@+id/watermarkTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:layout_marginEnd="16dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_watermark"
+                        app:tint="@color/text_secondary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/watermark_time"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </HorizontalScrollView>
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

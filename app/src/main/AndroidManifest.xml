@@ -2,6 +2,36 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--
+    相机权限声明
+    为什么需要这些权限：
+    1. CAMERA: 访问设备摄像头，拍照和预览的基础权限
+    2. WRITE_EXTERNAL_STORAGE: 保存照片到外部存储（Android 10以下需要）
+    3. READ_EXTERNAL_STORAGE: 读取相册中的照片（如果需要的话）
+    -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!--
+    存储权限 - 分版本处理
+    Android 10 (API 29) 以下需要存储权限
+    Android 10+ 使用Scoped Storage，不需要存储权限
+    -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+
+    <!--
+    相机功能声明 - 告诉Google Play Store这个应用需要相机
+    required="false" 表示没有相机的设备也可以安装（但功能受限）
+    -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

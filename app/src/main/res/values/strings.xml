@@ -1,3 +1,80 @@
 <resources>
-    <string name="app_name">WatermarkCamera</string>
+    <!-- 应用名称 -->
+    <string name="app_name">水印相机</string>
+
+    <!-- 主界面 -->
+    <string name="camera_preview">相机预览</string>
+    <string name="capture_photo">拍照</string>
+    <string name="switch_camera">切换摄像头</string>
+    <string name="flash_auto">自动闪光</string>
+    <string name="flash_on">开启闪光</string>
+    <string name="flash_off">关闭闪光</string>
+    <string name="gallery">相册</string>
+    <string name="settings">设置</string>
+
+    <!-- 水印相关 -->
+    <string name="watermark">水印</string>
+    <string name="watermark_text">文字水印</string>
+    <string name="watermark_image">图片水印</string>
+    <string name="watermark_time">时间水印</string>
+    <string name="watermark_location">位置水印</string>
+    <string name="watermark_custom">自定义水印</string>
+    <string name="watermark_none">无水印</string>
+
+    <!-- 水印编辑 -->
+    <string name="edit_watermark">编辑水印</string>
+    <string name="watermark_text_hint">请输入水印文字</string>
+    <string name="watermark_size">大小</string>
+    <string name="watermark_opacity">透明度</string>
+    <string name="watermark_color">颜色</string>
+    <string name="watermark_position">位置</string>
+    <string name="watermark_font">字体</string>
+
+    <!-- 位置选项 -->
+    <string name="position_top_left">左上角</string>
+    <string name="position_top_right">右上角</string>
+    <string name="position_bottom_left">左下角</string>
+    <string name="position_bottom_right">右下角</string>
+    <string name="position_center">居中</string>
+
+    <!-- 按钮文字 -->
+    <string name="ok">确定</string>
+    <string name="cancel">取消</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="preview">预览</string>
+    <string name="apply">应用</string>
+    <string name="reset">重置</string>
+
+    <!-- 提示信息 -->
+    <string name="photo_saved">照片已保存</string>
+    <string name="photo_save_failed">照片保存失败</string>
+    <string name="permission_camera_required">需要相机权限才能拍照</string>
+    <string name="permission_storage_required">需要存储权限才能保存照片</string>
+    <string name="camera_error">相机出现错误</string>
+    <string name="loading">加载中...</string>
+
+    <!-- 设置页面 -->
+    <string name="photo_quality">照片质量</string>
+    <string name="photo_resolution">照片分辨率</string>
+    <string name="save_location">保存位置</string>
+    <string name="auto_save">自动保存</string>
+    <string name="show_grid">显示网格线</string>
+    <string name="sound_enabled">拍照声音</string>
+
+    <!-- 质量选项 -->
+    <string name="quality_high">高质量</string>
+    <string name="quality_medium">中等质量</string>
+    <string name="quality_low">低质量</string>
+
+    <!-- 权限相关 -->
+    <string name="permission_required_title">需要权限</string>
+    <string name="permission_required_message">水印相机需要以下权限才能正常工作：\n\n• 相机权限：用于拍照和预览\n• 存储权限：用于保存照片到相册\n\n请点击"授予权限"以继续使用。</string>
+    <string name="permission_granted">权限已授予</string>
+    <string name="permission_denied_message">没有必要权限，应用无法正常工作</string>
+    <string name="permission_permanently_denied_title">权限被禁用</string>
+    <string name="permission_permanently_denied_message">相机和存储权限已被禁用。请在设置中手动开启这些权限，否则应用无法正常工作。</string>
+    <string name="grant_permission">授予权限</string>
+    <string name="go_to_settings">前往设置</string>
 </resources>
