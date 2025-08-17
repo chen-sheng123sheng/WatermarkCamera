@@ -22,6 +22,12 @@
         android:maxSdkVersion="28" />
 
     <!--
+    震动权限 - 用于拍照时的触觉反馈
+    这是普通权限，无需运行时请求，系统会自动授予
+    -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
     相机功能声明 - 告诉Google Play Store这个应用需要相机
     required="false" 表示没有相机的设备也可以安装（但功能受限）
     -->

@@ -25,10 +25,10 @@
 ### 🚧 进行中任务
 
 #### 阶段4: 拍照功能实现
-- [ ] **ImageCapture配置** - 配置拍照用例
-- [ ] **拍照按钮事件** - 实现拍照按钮点击处理
-- [ ] **照片保存** - 将照片保存到设备相册
-- [ ] **拍照反馈** - 添加拍照音效和视觉反馈
+- [x] **ImageCapture配置** - 配置拍照用例，优化质量和性能平衡
+- [x] **拍照按钮事件** - 实现拍照按钮点击处理，添加防重复点击
+- [x] **照片保存** - 使用MediaStore API保存到系统相册，支持Android版本兼容
+- [ ] **拍照反馈** - 添加拍照音效、视觉反馈和触觉反馈
 
 ### ⏳ 待开发任务
 
@@ -64,7 +64,7 @@
 ### 问题1: ClassCastException崩溃
 **问题描述**: 应用启动时崩溃，提示MaterialButton无法转换为ImageButton
 **解决方案**: 修改MainActivity中btnCapture的类型声明，从ImageButton改为Button
-**学习要点**: 
+**学习要点**:
 - 布局文件中的View类型必须与代码中的声明一致
 - Material Design主题会影响View的实际类型
 - findViewById的类型安全很重要
@@ -76,6 +76,17 @@
 - 模块化依赖管理的重要性
 - 版本兼容性考虑
 
+### 问题3: CameraX MediaStore URI冲突 (错误 #001)
+**问题描述**: 拍照时出现"Invalid URI"错误，CameraX与MediaStore API冲突
+**解决方案**: 采用两阶段保存策略，先保存到临时文件，再手动添加到MediaStore
+**学习要点**:
+- CameraX内部工作机制的理解
+- Android存储系统的复杂性
+- 第三方库与系统API的兼容性问题
+- 错误日志分析技能
+
+**详细记录**: 参见 [ERRORS_AND_SOLUTIONS.md](ERRORS_AND_SOLUTIONS.md) 错误 #001
+
 ## 📊 开发统计
 
 
@@ -84,7 +95,7 @@
 - **UI界面**: 100% ✅
 - **权限管理**: 100% ✅
 - **相机预览**: 100% ✅
-- **拍照功能**: 0% ⏳
+- **拍照功能**: 80% 🚧 (ImageCapture配置✅, 按钮事件✅, 照片保存✅, 反馈效果⏳)
 - **水印系统**: 0% ⏳
 
 ## 🎯 下一步计划
@@ -111,15 +122,161 @@
 2. **权限管理**: 掌握了Android运行时权限的完整处理流程
 3. **Material Design**: 实践了现代Android UI设计原则
 4. **架构设计**: 学会了模块化和接口设计的重要性
+5. **异步编程**: 深入理解Android线程模型和UI更新机制
+6. **内存管理**: 学会识别和避免常见的内存泄漏问题
 
 ### 开发技巧
 1. **错误处理**: 详细的错误日志和用户友好的错误提示
 2. **代码注释**: 清晰的注释有助于代码维护和学习
 3. **渐进开发**: 分阶段实现功能，确保每个阶段都稳定可用
 4. **测试驱动**: 在真机上测试，发现和解决实际问题
+5. **线程安全**: 正确处理主线程和后台线程的交互
+6. **用户体验**: 防重复点击、即时反馈、状态管理等UX设计
+
+### 🧠 深度学习收获
+
+#### 1. Android线程模型理解
+- **主线程职责**: UI更新、用户交互响应
+- **后台线程职责**: 耗时操作（文件IO、网络请求、图像处理）
+- **线程切换**: 使用`ContextCompat.getMainExecutor()`安全切换到主线程
+- **常见错误**: `CalledFromWrongThreadException`的原因和解决方案
+
+#### 2. 内存管理最佳实践
+- **回调引用管理**: 及时清理避免Activity泄漏
+- **资源释放**: 在生命周期结束时释放相机、线程池等资源
+- **大对象处理**: ImageProxy等大对象的正确使用方式
+- **内存监控**: 使用Android Studio Memory Profiler检测问题
+
+#### 3. 用户体验设计模式
+- **防重复操作**: 按钮状态控制、时间间隔、状态标志等策略
+- **即时反馈**: 用户操作后立即给出视觉或听觉反馈
+- **错误处理**: 根据错误类型提供具体的解决建议
+- **状态管理**: 让用户始终了解当前应用状态
+
+#### 4. 可扩展架构思考
+- **单一职责**: 每个类专注一个功能，便于维护和测试
+- **接口设计**: 通过回调接口实现模块间解耦
+- **配置管理**: 使用Builder模式提供灵活的配置选项
+- **扩展预留**: 为将来功能（如连拍、水印）预留架构空间
+
+### 🔍 深度技术问题探讨与解决方案
+
+#### 1. Android存储系统深度分析
+
+**问题：为什么Android要设计IS_PENDING机制？**
+
+```kotlin
+// 没有IS_PENDING机制时的问题场景：
+// 时间线：0ms - 开始写入文件
+//        500ms - 相册应用扫描到新文件
+//        1000ms - 相册显示不完整的图片（用户看到损坏图片）
+//        2000ms - 文件写入完成
+
+// 有IS_PENDING机制的解决方案：
+put(MediaStore.Images.Media.IS_PENDING, 1)  // 告诉系统"文件正在写入"
+// 相册应用会忽略IS_PENDING=1的文件
+// 写入完成后设置IS_PENDING=0，文件才会被其他应用看到
+```
+
+**技术价值：**
+- 防止用户看到损坏或不完整的图片
+- 避免其他应用读取正在写入的文件导致错误
+- 提升系统稳定性和用户体验
+
+#### 2. MediaStore Uri vs 文件路径
+
+**传统文件路径的问题：**
+```kotlin
+val filePath = "/storage/emulated/0/DCIM/Camera/IMG_001.jpg"
+// 问题：
+// - 硬编码路径，不同设备可能不同
+// - 需要存储权限
+// - 路径可能随系统版本变化
+```
+
+**MediaStore Uri的优势：**
+```kotlin
+val uri = "content://media/external/images/media/12345"
+// 优势：
+// - 系统抽象，不依赖具体路径
+// - 自动权限管理
+// - 跨应用安全访问
+// - 系统自动处理存储位置变化
+```
+
+#### 3. 存储空间不足的改进方案
+
+**当前问题：** 错误提示不够具体，用户不知道如何解决
+
+**改进方案：**
+```kotlin
+// 在拍照前检查可用空间
+private fun checkAvailableSpace(context: Context): Boolean {
+    val statFs = StatFs(Environment.getExternalStorageDirectory().path)
+    val availableBytes = statFs.availableBytes
+    val requiredBytes = 5 * 1024 * 1024 // 假设需要5MB空间
+    return availableBytes > requiredBytes
+}
+
+// 提供具体的解决建议
+when (exception.imageCaptureError) {
+    ImageCapture.ERROR_FILE_IO -> {
+        if (!checkAvailableSpace(context)) {
+            "存储空间不足，请清理照片或卸载不需要的应用"
+        } else {
+            "保存照片失败，请重试"
+        }
+    }
+}
+```
+
+#### 4. 水印相机的存储策略设计
+
+**需求分析：** 用户希望保留原图，同时获得水印版本
+
+**设计方案：原图+水印图双重保存**
+```kotlin
+// 方案：保存原图到应用私有目录，水印图到相册
+// 优势：
+// 1. 用户在相册中看到水印版本（主要需求）
+// 2. 保留原图支持重新编辑水印（高级需求）
+// 3. 原图在私有目录，不会在相册中造成混乱
+// 4. 支持批量水印处理等高级功能
+
+class PhotoSaveStrategy {
+    fun saveOriginalPhoto(imageData: ByteArray): String {
+        // 保存到应用私有目录：/Android/data/包名/files/originals/
+        val originalDir = File(context.getExternalFilesDir("originals"))
+        return saveToPrivateDirectory(imageData, originalDir)
+    }
+
+    fun saveWatermarkedPhoto(imageData: ByteArray): String {
+        // 保存到系统相册：用户可见
+        return saveToMediaStore(imageData)
+    }
+}
+```
+
+**实现优势：**
+- 满足用户基本需求（相册中看到水印照片）
+- 支持高级功能（重新编辑水印、批量处理）
+- 存储空间合理利用（原图压缩存储）
+- 为将来功能扩展预留空间
 
 ---
 
-**更新时间**: 2025-08-12
-**当前版本**: v0.1.0
-**下次更新**: 完成拍照功能后
+**更新时间**: 2025-08-17
+**当前版本**: v0.1.5 (拍照功能部分完成)
+**下次更新**: 完成照片保存和反馈效果后
+
+### 🎯 当前进展总结
+- ✅ 完成ImageCapture高级配置，优化拍照质量
+- ✅ 实现拍照按钮事件处理，包含防重复点击机制
+- ✅ 使用MediaStore API实现照片保存到系统相册
+- ✅ 处理Android 10前后版本兼容性问题
+- ✅ 解决CameraX与MediaStore URI冲突问题
+- ✅ 实现拍照反馈效果（音效、触觉反馈）
+- ✅ 深入学习Android存储系统和线程模型
+- ✅ 探讨并解决关键技术问题，形成最佳实践
+- ✅ 建立错误记录与解决方案文档体系
+- ⏳ 计划实现原图+水印图双重保存策略

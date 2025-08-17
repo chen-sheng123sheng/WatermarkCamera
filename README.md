@@ -252,6 +252,7 @@ app/src/main/
    - Use Cases设计模式 (Preview, ImageCapture, ImageAnalysis)
    - 生命周期感知的相机管理
    - 相机配置和控制
+   - 异步编程和回调机制
 
 2. **权限管理**
    - 运行时权限请求
@@ -268,12 +269,127 @@ app/src/main/
    - 接口和回调设计
    - 错误处理策略
 
+5. **Android存储系统**
+   - 文件存储策略选择
+   - Scoped Storage概念
+   - MediaStore API使用
+
 ### 开发技巧
 
 - **类型安全**: 避免ClassCastException等常见错误
 - **资源管理**: 正确的生命周期管理和资源释放
 - **用户体验**: 友好的错误提示和加载状态
 - **代码质量**: 清晰的注释和规范的命名
+- **线程安全**: 主线程与后台线程的正确使用
+- **内存管理**: 避免内存泄漏和过度消耗
+
+### 🧠 深度技术探讨
+
+#### 1. Android线程模型与UI更新
+
+```kotlin
+// 为什么需要切换到主线程？
+// Android UI工具包不是线程安全的，只有主线程可以更新UI
+
+// ❌ 错误：在后台线程更新UI
+override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+    Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()  // 崩溃！
+}
+
+// ✅ 正确：切换到主线程
+override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+    ContextCompat.getMainExecutor(context).execute {
+        Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()  // 安全
+    }
+}
+```
+
+**关键概念：**
+- 主线程（UI线程）：负责UI更新和用户交互
+- 后台线程：负责耗时操作（网络、文件IO、图像处理）
+- 违反线程规则会抛出`CalledFromWrongThreadException`
+
+#### 2. 内存管理最佳实践
+
+```kotlin
+// 潜在内存泄漏点及解决方案
+
+// 问题1：回调持有Activity引用
+class CameraManager {
+    private var callback: CameraCallback? = null
+
+    fun release() {
+        callback = null  // 及时清理引用
+        cameraExecutor.shutdown()
+    }
+}
+
+// 问题2：大对象未及时释放
+// ImageProxy包含大量图像数据，CameraX会自动处理
+// 但在ImageAnalysis中需要手动调用imageProxy.close()
+```
+
+**内存管理原则：**
+- 及时清理回调引用，避免Activity泄漏
+- 大对象使用完毕后立即释放
+- 使用弱引用处理长期持有的引用
+- 在生命周期结束时清理所有资源
+
+#### 3. 用户体验设计模式
+
+```kotlin
+// 防止重复点击的多种策略
+
+// 策略1：按钮状态控制（当前使用）
+btnCapture.isEnabled = false  // 简单有效
+
+// 策略2：时间间隔控制
+private var lastClickTime = 0L
+if (System.currentTimeMillis() - lastClickTime < 2000) return
+
+// 策略3：状态标志
+private var isCapturing = false
+if (isCapturing) return
+
+// 策略4：视觉进度指示
+progressBar.visibility = View.VISIBLE
+btnCapture.visibility = View.GONE
+```
+
+**用户体验原则：**
+- 立即反馈：用户操作后立即给出响应
+- 状态明确：让用户知道当前发生了什么
+- 错误友好：提供清晰的错误信息和解决建议
+- 防误操作：避免用户意外的重复操作
+
+#### 4. 可扩展架构设计
+
+```kotlin
+// 为连拍功能设计的架构扩展
+
+class CameraManager {
+    // 支持单拍和连拍的统一接口
+    fun takePicture(mode: CaptureMode = CaptureMode.SINGLE) {
+        when (mode) {
+            CaptureMode.SINGLE -> takeSinglePicture()
+            CaptureMode.BURST -> startBurstCapture()
+        }
+    }
+
+    // 连拍状态管理
+    private fun startBurstCapture() {
+        // 批量处理逻辑
+        // 减少UI更新频率
+        // 优化内存使用
+    }
+}
+```
+
+**架构设计原则：**
+- 单一职责：每个类只负责一个功能
+- 开闭原则：对扩展开放，对修改关闭
+- 接口隔离：提供最小必要的接口
+- 依赖倒置：依赖抽象而不是具体实现
 
 ## 🐛 常见问题
 
@@ -299,12 +415,62 @@ private lateinit var btnCapture: Button
 2. 检查设备的相机硬件支持
 3. 添加适当的错误处理
 
+### Q: 拍照时应用崩溃，提示CalledFromWrongThreadException
+**A**: 这是线程安全问题，UI更新必须在主线程进行：
+```kotlin
+// ❌ 错误：在后台线程更新UI
+override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+    Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()  // 崩溃！
+}
+
+// ✅ 正确：切换到主线程
+override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+    ContextCompat.getMainExecutor(context).execute {
+        Toast.makeText(context, "保存成功", Toast.LENGTH_SHORT).show()
+    }
+}
+```
+
+### Q: 应用使用一段时间后变慢或崩溃
+**A**: 可能是内存泄漏问题：
+1. 检查是否及时清理回调引用
+2. 确保在Activity销毁时释放相机资源
+3. 使用Android Studio的Memory Profiler检查内存使用
+```kotlin
+override fun onDestroy() {
+    super.onDestroy()
+    cameraManager.release()  // 释放相机资源
+}
+```
+
+### Q: 用户快速点击拍照按钮导致多张照片
+**A**: 实现防重复点击机制：
+```kotlin
+btnCapture.setOnClickListener {
+    btnCapture.isEnabled = false  // 禁用按钮
+    // 拍照完成后在回调中重新启用
+}
+```
+
+### Q: 拍照保存失败，提示存储空间不足
+**A**: 检查存储策略和错误处理：
+1. 使用应用私有目录避免权限问题
+2. 检查可用存储空间
+3. 提供用户友好的错误提示
+```kotlin
+val errorMessage = when (exception.imageCaptureError) {
+    ImageCapture.ERROR_FILE_IO -> "保存照片失败，请检查存储空间"
+    // 其他错误类型...
+}
+```
+
 ## 📚 参考资料
 
 - [CameraX官方文档](https://developer.android.com/training/camerax)
 - [Material Design指南](https://material.io/design)
 - [Android权限最佳实践](https://developer.android.com/training/permissions)
 - [Kotlin Android开发](https://developer.android.com/kotlin)
+- [项目错误记录与解决方案](ERRORS_AND_SOLUTIONS.md)
 
 ---
 

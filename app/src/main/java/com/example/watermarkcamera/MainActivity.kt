@@ -93,8 +93,20 @@ class MainActivity : AppCompatActivity(), CameraCallback {
     private fun setupClickListeners() {
         // 拍照按钮
         btnCapture.setOnClickListener {
-            // TODO: 在下一个任务中实现拍照功能
-            Toast.makeText(this, "拍照功能即将实现", Toast.LENGTH_SHORT).show()
+            // 学习要点：拍照按钮的用户体验设计
+            // 1. 立即给用户反馈，表明点击已响应
+            // 2. 防止重复点击，避免多次拍照
+            // 3. 调用CameraManager的拍照方法
+
+            // 禁用按钮，防止重复点击
+            btnCapture.isEnabled = false
+
+            // 给用户即时反馈
+            Toast.makeText(this, "正在拍照...", Toast.LENGTH_SHORT).show()
+
+            // 调用相机管理器的拍照方法
+            // 结果将通过CameraCallback回调返回
+            cameraManager.takePicture(this)
         }
 
         // 切换相机按钮
@@ -316,6 +328,57 @@ class MainActivity : AppCompatActivity(), CameraCallback {
             updateFlashButtonIcon(flashMode)
             Toast.makeText(this, "闪光灯: $flashModeText", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /**
+     * 拍照成功回调
+     *
+     * 学习要点：拍照成功后的用户体验设计
+     * 1. 恢复按钮状态，允许继续拍照
+     * 2. 给用户明确的成功反馈，包含保存位置信息
+     * 3. 提供文件路径信息（可用于后续功能）
+     * 4. 记录日志便于调试
+     */
+    override fun onPhotoSaved(filePath: String) {
+        Log.d(TAG, "照片保存成功: $filePath")
+
+        // 恢复拍照按钮状态
+        btnCapture.isEnabled = true
+
+        // 给用户详细的成功反馈
+        // 让用户知道照片保存在相册中，可以通过相册应用查看
+        Toast.makeText(this, "照片已保存到相册！\n路径：$filePath", Toast.LENGTH_LONG).show()
+
+        // TODO: 将来可以在这里添加：
+        // 1. 显示照片缩略图预览
+        // 2. 提供"在相册中查看"按钮
+        // 3. 提供分享选项
+        // 4. 添加水印处理选项
+        // 5. 播放拍照成功音效
+    }
+
+    /**
+     * 拍照失败回调
+     *
+     * 学习要点：错误处理的用户体验设计
+     * 1. 恢复按钮状态，允许重试
+     * 2. 显示用户友好的错误信息
+     * 3. 记录详细错误日志便于调试
+     * 4. 不要让用户感到困惑或沮丧
+     */
+    override fun onPhotoError(error: String) {
+        Log.e(TAG, "拍照失败: $error")
+
+        // 恢复拍照按钮状态
+        btnCapture.isEnabled = true
+
+        // 显示错误信息
+        Toast.makeText(this, "拍照失败: $error", Toast.LENGTH_LONG).show()
+
+        // TODO: 将来可以在这里添加：
+        // 1. 错误统计和上报
+        // 2. 自动重试机制
+        // 3. 引导用户检查权限或存储空间
     }
 
     /**
