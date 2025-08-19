@@ -46,12 +46,74 @@ Caused by: java.lang.UnsupportedOperationException: Invalid URI content://media/
 **错误流程**:
 ```kotlin
 // 我们的代码
-val imageUri = contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
-val outputFileOptions = ImageCapture.OutputFileOptions.Builder(contentResolver, imageUri, contentValues).build()
+/**
+ * 错误的实现方式 - 直接使用MediaStore URI
+ * 这种方式会导致CameraX内部冲突
+ */
+fun takePicture(context: Context) {
+    // 第一步：创建MediaStore记录
+    val contentValues = ContentValues().apply {
+        put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            put(MediaStore.Images.Media.RELATIVE_PATH, 
+                "${Environment.DIRECTORY_DCIM}/WatermarkCamera")
+            put(MediaStore.Images.Media.IS_PENDING, 1)  // 关键：设置为待处理状态
+        }
+    }
+    
+    // 第二步：通过ContentResolver创建媒体记录
+    val contentResolver = context.contentResolver
+    val imageUri = contentResolver.insert(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, 
+        contentValues
+    )
+    
+    if (imageUri == null) {
+        Log.e(TAG, "创建媒体记录失败")
+        return
+    }
+    
+    // 第三步：直接将MediaStore URI传递给CameraX（问题所在）
+    val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
+        contentResolver, 
+        imageUri,           // 这里传入了MediaStore URI
+        contentValues       // 这里又传入了ContentValues
+    ).build()
+    
+    // 第四步：执行拍照
+    imageCapture.takePicture(
+        outputFileOptions,
+        cameraExecutor,
+        object : ImageCapture.OnImageSavedCallback {
+            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                // 成功回调 - 但实际上不会执行到这里
+                Log.d(TAG, "拍照成功")
+            }
+            
+            override fun onError(exception: ImageCaptureException) {
+                // 错误回调 - 会执行到这里
+                Log.e(TAG, "拍照失败", exception)
+            }
+        }
+    )
+}
 
 // CameraX内部 (JpegBytes2Disk.java:191)
 contentResolver.insert(...) // 尝试再次插入，导致冲突
 ```
+
+### 问题分析：为什么这样写？
+
+**设计思路（看似合理）**:
+1. 先在MediaStore中创建记录，获得URI
+2. 将URI传递给CameraX，让它直接写入
+3. 这样照片就会自动出现在相册中
+
+**实际问题**:
+- CameraX内部有自己的MediaStore处理逻辑
+- 我们的预先创建与CameraX的内部处理产生冲突
 
 ### ✅ 解决方案
 

@@ -54,7 +54,11 @@ app/src/main/
 │   │   └── CameraCallback.kt          # 相机回调接口
 │   ├── utils/
 │   │   └── PermissionManager.kt       # 权限管理工具
-│   └── watermark/                     # 水印功能模块 (待开发)
+│   └── watermark/                     # 水印功能模块
+│       ├── WatermarkType.kt           # 水印类型枚举
+│       ├── WatermarkData.kt           # 水印数据模型
+│       ├── WatermarkRenderer.kt       # 水印渲染引擎
+│       └── WatermarkManager.kt        # 水印管理器
 ├── res/
 │   ├── layout/
 │   │   └── activity_main.xml          # 主界面布局
@@ -91,7 +95,24 @@ app/src/main/
 - ✅ 闪光灯模式控制
 - ✅ 相机错误处理和回调
 
-### 4. 🏗️ 架构设计
+### 4. 📸 拍照功能
+- ✅ ImageCapture配置和优化
+- ✅ 拍照按钮事件处理
+- ✅ 照片保存到系统相册
+- ✅ 拍照反馈效果（音效、震动）
+- ✅ 防重复点击机制
+- ✅ 完善的错误处理
+- ✅ MediaStore API集成
+
+### 5. 🎨 水印系统
+- ✅ **水印架构设计**: 分层架构，支持多种水印类型
+- ✅ **文字水印**: 支持自定义文字，高质量Canvas渲染
+- ✅ **时间水印**: 自动生成时间戳，支持格式自定义
+- ✅ **渲染引擎**: 抗锯齿绘制，支持阴影效果
+- ✅ **双重保存策略**: 原图+水印图分别保存
+- ✅ **跨分辨率适配**: 比例坐标系统确保一致性
+
+### 6. 🏗️ 架构设计
 - ✅ 模块化代码结构
 - ✅ 回调接口设计模式
 - ✅ 资源文件规范化管理
@@ -99,18 +120,11 @@ app/src/main/
 
 ## 🚧 待开发功能
 
-### 1. 📸 拍照功能
-- ⏳ 基础拍照功能实现
-- ⏳ 照片质量设置
-- ⏳ 照片保存到相册
-- ⏳ 拍照音效和动画
-
-### 2. 🖼️ 水印系统
-- ⏳ 文字水印编辑器
-- ⏳ 时间水印自动生成
+### 1. 🖼️ 水印系统增强
+- ⏳ 水印编辑界面
 - ⏳ 位置水印 (需要位置权限)
 - ⏳ 图片水印支持
-- ⏳ 水印位置和大小调整
+- ⏳ 水印位置拖拽调整
 - ⏳ 水印透明度控制
 - ⏳ 水印模板系统
 
@@ -471,6 +485,8 @@ val errorMessage = when (exception.imageCaptureError) {
 - [Android权限最佳实践](https://developer.android.com/training/permissions)
 - [Kotlin Android开发](https://developer.android.com/kotlin)
 - [项目错误记录与解决方案](ERRORS_AND_SOLUTIONS.md)
+- [CameraX与MediaStore冲突案例分析](ERROR_CASE_STUDY_CAMERAX_MEDIASTORE.md)
+- [面试技术亮点总结](INTERVIEW_HIGHLIGHTS.md)
 
 ---
 

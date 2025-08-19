@@ -13,8 +13,10 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.view.PreviewView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import android.content.res.Configuration
 import com.example.watermarkcamera.camera.CameraCallback
 import com.example.watermarkcamera.camera.CameraManager
+import com.example.watermarkcamera.utils.DimensionUtil
 import com.example.watermarkcamera.utils.PermissionManager
 
 /**
@@ -65,10 +67,16 @@ class MainActivity : AppCompatActivity(), CameraCallback {
         // 初始化UI组件
         initializeViews()
 
-        // 初始化相机管理器
-        cameraManager = CameraManager(this).apply {
+        // 从Application获取相机管理器
+        Log.d(TAG, "从Application获取相机管理器")
+        val app = WatermarkCameraApplication.getInstance()
+        Log.d(TAG, "相机管理器是否已存在: ${app.isCameraManagerCreated()}")
+
+        cameraManager = app.getCameraManager(this).apply {
             setCameraCallback(this@MainActivity)
         }
+
+        Log.d(TAG, "相机管理器获取完成，开始初始化")
 
         // 检查并请求必要权限
         checkAndRequestPermissions()
@@ -397,13 +405,15 @@ class MainActivity : AppCompatActivity(), CameraCallback {
     // ========== 生命周期管理 ==========
 
     /**
-     * Activity销毁时释放相机资源
+     * Activity销毁时的清理工作
+     * 注意：相机资源现在由Application管理，不在这里释放
      */
     override fun onDestroy() {
         super.onDestroy()
-        if (::cameraManager.isInitialized) {
-            cameraManager.release()
-        }
-        Log.d(TAG, "Activity销毁，相机资源已释放")
+        Log.d(TAG, "Activity销毁，相机资源由Application管理")
+
+        // 如果需要在特定情况下释放相机资源（比如应用真正退出），
+        // 可以调用：WatermarkCameraApplication.getInstance().releaseCameraManager()
+        // 但通常让Application自己管理生命周期更好
     }
 }

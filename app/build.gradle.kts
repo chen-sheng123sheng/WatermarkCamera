@@ -56,6 +56,9 @@ dependencies {
     implementation(libs.androidx.camera.extensions)
     implementation(libs.camera.view)
 
+    // ExifInterface：读取和处理图片EXIF信息
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
     // 测试依赖
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
